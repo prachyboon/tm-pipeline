@@ -1,11 +1,15 @@
 # Project: TM-ETL Data Pipline
 The ETL project for TM-Data Engineer exam which crafted as Serverless-ETL pipeline on AWS stacks.  
 
+---
+
 ## Part I: Pipeline Architecture and Diagram 🛤️
 ![architecture-diagram.png](image%2Farchitecture-diagram.png)
 
 All components and infrastructure are created from Cloudformation template as IaC. All services designed to be serverless data pipeline
 to gain advantages over cost-optimization, scalability and rapid operation and less administration.
+
+---
 
 ## Part II: Components 🛠️
 - **Storage Layer**
@@ -22,6 +26,8 @@ to gain advantages over cost-optimization, scalability and rapid operation and l
   - Lambda Layer: to contain library dependencies for app-service.
   - SNS: alert and notification center, alert in both cases including FAILED and SUCCESS of ingestion in any states in running pipeline.
  
+---
+
 ### Part III: Workflow and States Transitions ⏳
 ![stepfunctions_graph_services.png](image%2Fstepfunctions_graph_services.png)
 
@@ -35,6 +41,8 @@ All processing unit, using **Glue** as main service to manipulate and process da
 * `SUCCESS` status will be sent as message via **SNS** to the team by email for notification 
 * `FAIL` in any states, failed message will be sent the team by email with the halt reason in the given state.
 * all `status` in `state` will also save to **DynamoDB** which define to be main logging table of monitoring the progress of running workflow
+
+---
 
 ### Part IV: API and Webservice 🪟
 
