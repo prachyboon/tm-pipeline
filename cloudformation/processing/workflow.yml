@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  TMWorkflowName:
+    Type: String
+    Default: "tm-etl-workflow"
+
+Resources:
+  TMWorkflowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TransformStateExecutionRoleGeneralPolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: "*"
+              - Effect: Allow
+                Action: glue:*
+                Resource: "*"
+              - Effect: Allow
+                Action: sns:*
+                Resource: "*"
+              - Effect: Allow
+                Action: dynamodb:*
+                Resource: "*"
+
+  TMWorkflow:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Ref 'TMWorkflowName'
+      DefinitionString: |-
+        {
+          "StartAt": "TransformerJob",
+          "States": {
+            "TransformerJob": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {
+                "JobName": "tm-dailycheckin-transformer"
+              },
+              "Next": "TransformStatusCheck",
+              "ResultPath": "$.output"
+            },
+            "TransformStatusCheck": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Or": [
+                    {
+                      "Variable": "$.output.JobRunState",
+                      "StringEquals": "SUCCEEDED"
+                    }
+                  ],
+                  "Next": "TransformUpdateSuccess"
+                }
+              ],
+              "Default": "TransformUpdateFailLog"
+            },
+            "TransformUpdateFailLog": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "tm-pipeline-log",
+                "Item": {
+                  "ingestedID": {
+                    "S": "20240301-A001"
+                  },
+                  "ingestedTable": {
+                    "S": "dailycheckin"
+                  },
+                  "state": {
+                    "S": "transform"
+                  },
+                  "status": {
+                    "S": "fail"
+                  }
+                }
+              },
+              "Next": "TransformFailAlert"
+            },
+            "TransformFailAlert": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "arn:aws:sns:ap-southeast-1:342076896000:datePipeline",
+                "Message": {
+                  "status": "Ingestion Fail",
+                  "latestState": "transform",
+                  "ingestedID": "20240301-A001"
+                }
+              },
+              "End": true
+            },
+            "TransformUpdateSuccess": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "tm-pipeline-log",
+                "Item": {
+                  "ingestedID": {
+                    "S": "20240301-A001"
+                  },
+                  "ingestedTable": {
+                    "S": "dailycheckin"
+                  },
+                  "state": {
+                    "S": "transform"
+                  },
+                  "status": {
+                    "S": "success"
+                  }
+                }
+              },
+              "Next": "TesterJob"
+            },
+            "TesterJob": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {
+                "JobName": "tm-dailycheckin-tester"
+              },
+              "Next": "TestStatusCheck",
+              "ResultPath": "$.outputTest"
+            },
+            "TestStatusCheck": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Or": [
+                    {
+                      "Variable": "$.outputTest.JobRunState",
+                      "StringEquals": "SUCCEEDED"
+                    }
+                  ],
+                  "Next": "UpdateSuccessTestLog"
+                }
+              ],
+              "Default": "UpdateFailTestLog"
+            },
+            "UpdateFailTestLog": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "tm-pipeline-log",
+                "Item": {
+                  "ingestedID": {
+                    "S": "20240301-A001"
+                  },
+                  "ingestedTable": {
+                    "S": "dailycheckin"
+                  },
+                  "state": {
+                    "S": "test"
+                  },
+                  "status": {
+                    "S": "fail"
+                  }
+                }
+              },
+              "Next": "TestFailAlert"
+            },
+            "TestFailAlert": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "arn:aws:sns:ap-southeast-1:342076896000:datePipeline",
+                "Message": {
+                  "status": "Ingestion Fail",
+                  "latestState": "test",
+                  "ingestedID": "20240301-A001"
+                }
+              },
+              "End": true
+            },
+            "UpdateSuccessTestLog": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "tm-pipeline-log",
+                "Item": {
+                  "ingestedID": {
+                    "S": "20240301-A001"
+                  },
+                  "ingestedTable": {
+                    "S": "dailycheckin"
+                  },
+                  "state": {
+                    "S": "test"
+                  },
+                  "status": {
+                    "S": "success"
+                  }
+                }
+              },
+              "Next": "LoaderJob"
+            },
+            "LoaderJob": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun",
+              "Parameters": {
+                "JobName": "tm-dailycheckin-loader"
+              },
+              "Next": "UpdateSuccessLoadLog"
+            },
+            "UpdateSuccessLoadLog": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "tm-pipeline-log",
+                "Item": {
+                  "ingestedID": {
+                    "S": "20240301-A001"
+                  },
+                  "ingestedTable": {
+                    "S": "dailycheckin"
+                  },
+                  "state": {
+                    "S": "load"
+                  },
+                  "status": {
+                    "S": "success"
+                  }
+                }
+              },
+              "Next": "TestSuccessAlert"
+            },
+            "TestSuccessAlert": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "arn:aws:sns:ap-southeast-1:342076896000:datePipeline",
+                "Message": {
+                  "status": "Ingestion Success",
+                  "latestState": "load",
+                  "ingestedID": "20240301-A001"
+                }
+              },
+              "End": true
+            }
+          }
+        }
+      RoleArn: !GetAtt TMWorkflowRole.Arn
+
+Outputs:
+  TMWorkflowArn:
+    Value: !GetAtt TMWorkflow.Arn

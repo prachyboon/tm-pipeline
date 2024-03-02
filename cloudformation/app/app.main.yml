@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  AppName:
+    Type: String
+    Default: "tm-dailycheckin-app"
+
+Resources:
+
+  AppApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "app-api-gw"
+      StageName: Prod
+
+  AppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: generalPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: S3AllResourcePolicies
+                Effect: Allow
+                Action:
+                  - s3:HeadBucket
+                  - s3:List*
+                  - s3:Get*
+                Resource: "*"
+              - Sid: CloudWatchLogResourcePolicy
+                Effect: Allow
+                Action:
+                  - logs:*
+                Resource: "*"
+              - Sid: XrayResourcePolicy
+                Effect: Allow
+                Action:
+                  - xray:*
+                Resource: "*"
+
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: 's3://tm-staging-zone/lambda/app_package.zip'
+      Handler: api_caller.lambda_handler
+      Role: !GetAtt AppRole.Arn
+      FunctionName: !Ref 'AppName'
+      Runtime: python3.10
+      Architectures:
+        - arm64
+      MemorySize: 128
+      Timeout: 30
+      Layers:
+        - arn:aws:lambda:ap-southeast-1:342076896000:layer:my-layer:1
+      Events:
+        AppCallerApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /get
+            Method: GET
+
+Outputs:
+  AppFunctionArn:
+    Value: !GetAtt AppFunction.Arn

@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  LandingZoneBucketName:
+    Type: String
+    Default: "tm-raw-zone"
+  StagingZoneBucketName:
+    Type: String
+    Default: "tm-staging-zone"
+  PipelineLogsTableName:
+    Type: String
+    Default: "tm-pipeline-log"
+
+Resources:
+  LandingZoneBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref LandingZoneBucketName
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: "arn:aws:lambda:ap-southeast-1:342076896000:function:tm-dailycheckin-controller"
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .csv
+
+  StagingZoneBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref StagingZoneBucketName
+
+  PipelineLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref 'PipelineLogsTableName'
+      AttributeDefinitions:
+        - AttributeName: ingestedID
+          AttributeType: S
+        - AttributeName: ingestedTable
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ingestedID
+          KeyType: HASH
+        - AttributeName: ingestedTable
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
