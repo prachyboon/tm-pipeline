@@ -1,7 +1,7 @@
 ### credential ###
-# Aws profile: boonsri-prachya
-# Access key: AKIAU7JK7GMABSGDY64C
-# Secret access key: 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
+Aws profile: boonsri-prachya
+Access key: AKIAU7JK7GMABSGDY64C
+Secret access key: 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
 
 ### deploy cloudformation ###
 aws cloudformation deploy --template-file storage/storage.main.yml --stack-name tm-etl-storage
