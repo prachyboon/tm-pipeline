@@ -20,12 +20,14 @@ to gain advantages over cost-optimization, scalability and rapid operation and l
   - StepFunction: is main workflow orchestration of serving the pipeline
 - **Consumption Layer**
   - Aurora Postgres: main destination database
+  - Lambda and API Gateway: created to be Web Service to serve API calling to query interested data for a given user.
 - **External Layer**
   - Lambda: the pipeline executor, responsibility to submit incoming/landing file to be ingested periodically. 
   (Note: this demonstrated data pipeline is firstly designed to ingest daily)
   - Lambda Layer: to contain library dependencies for app-service.
   - SNS: alert and notification center, alert in both cases including FAILED and SUCCESS of ingestion in any states in running pipeline.
  
+> In this project, **SNS** and **Aurora Postgres** are not created and included in Cloudformation.
 ---
 
 ### Part III: Workflow and States Transitions ⏳
