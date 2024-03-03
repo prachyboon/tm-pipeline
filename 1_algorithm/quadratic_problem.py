@@ -1,13 +1,21 @@
 import math
+import time
+
+cache_prims = {}
 
 
 def is_prime(n):
     # 2 is the smallest n
     # 1 is the factor of all n
     # n is the factor of itself
+    if cache_prims.get(n):
+        return True
+
     for i in range(2, n):
         if (n % i) == 0:
             return False
+
+    cache_prims[n] = n
     return True
 
 
@@ -17,7 +25,7 @@ def find_n_prime(a, b):
     running_n_prims = []
     while True:
         _prime = abs(int(math.pow(i, 2) + (i * a) + b))
-        if is_prime(_prime):  # TODO: can save as cache
+        if is_prime(_prime):  # save compute time with cache
             running_n.append(i)
             running_n_prims.append(_prime)
             i = i + 1
@@ -49,7 +57,10 @@ def main():
 
 
 if __name__ == '__main__':
+    start = time.time()
     n, primes, dot_ab = main()
-    print(f"max_n: {n}")
-    print(f"max_con_primes: {primes}")
+    print(f"max n: {n}")
+    print(f"max consecutive primes: {primes}")
     print(f"max product a*b: {dot_ab}")
+    end = time.time()
+    print("elapsed_time: {} s.".format(end - start))
