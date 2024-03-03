@@ -1,14 +1,14 @@
-from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 
+import sys
 import pytz
 from datetime import datetime
 
-from pyspark.sql.types import *
-from pyspark.sql.functions import *
+from pyspark.sql.types import StructField, StringType, TimestampType, FloatType, StructType
+from pyspark.sql.functions import col
 
 local_timezone = pytz.timezone('Asia/Bangkok')
 execute_time = datetime.now(local_timezone)
@@ -47,7 +47,7 @@ def find_missing(tmp_df):
     for index, tmp_column in enumerate(tmp_df.columns):
         missing_count = tmp_df.filter(
             col(tmp_column).eqNullSafe(None) | col(tmp_column).isNull() | col(tmp_column).isin([None])).count()
-        missing_values.update({column: missing_count})
+        missing_values.update({tmp_column: missing_count})
     return missing_values
 
 

@@ -1,14 +1,13 @@
-from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 
+import sys
 import pytz
 from datetime import datetime
 
-from pyspark.sql.types import *
-from pyspark.sql.functions import *
+from pyspark.sql.types import StructField, StringType, TimestampType, FloatType, StructType
 
 local_timezone = pytz.timezone('Asia/Bangkok')
 execute_time = datetime.now(local_timezone)
