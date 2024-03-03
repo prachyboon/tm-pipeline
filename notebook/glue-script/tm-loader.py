@@ -7,7 +7,7 @@ import sys
 import pytz
 from datetime import datetime
 
-from pyspark.sql.types import StructField, StringType, TimestampType, FloatType, StructType
+from pyspark.sql.types import StructField, StringType, TimestampType, DecimalType, StructType
 
 local_timezone = pytz.timezone('Asia/Bangkok')
 execute_time = datetime.now(local_timezone)
@@ -29,7 +29,7 @@ job.init(args['JOB_NAME'], args)
 schema = StructType([
     StructField("user", StringType(), True),
     StructField("timestamp", TimestampType(), True),
-    StructField("hours", FloatType(), True),
+    StructField("hours", DecimalType(5, 2), True),
     StructField("project", StringType(), True),
 ])
 

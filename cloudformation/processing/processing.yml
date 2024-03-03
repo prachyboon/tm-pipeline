@@ -10,6 +10,15 @@ Parameters:
   GlueLoaderrName:
     Type: String
     Default: "tm-dailycheckin-loader"
+  GlueTransformerScript:
+    Type: String
+    Default: "s3://tm-staging-zone/glue-script/tm-transformer.py"
+  GlueTesterScript:
+    Type: String
+    Default: "s3://tm-staging-zone/glue-script/tm-tester.py"
+  GlueLoaderScript:
+    Type: String
+    Default: "s3://tm-staging-zone/glue-script/tm-loader.py"
 
 Resources:
   GlueRole:
@@ -34,21 +43,21 @@ Resources:
   GlueTransformer:
     Type: AWS::Glue::Job
     Properties:
-      Role: !Ref 'GlueRole'
-      Name: !Ref 'GlueTransformerName'
+      Role: !Ref GlueRole
+      Name: !Ref GlueTransformerName
       Description: "Glue DailyCheckIn Transform"
       GlueVersion: 4.0
       Command:
         Name: glueetl
         PythonVersion: 3
-        ScriptLocation: 's3://tm-staging-zone/glue-script/tm-transformer.py'
+        ScriptLocation: !Ref GlueTransformerScript
       DefaultArguments:
         "--enable-glue-datacatalog": ""
         "--enable-metrics": ""
         "--job-bookmark-option": "job-bookmark-disable"
       WorkerType: Standard
-      NumberOfWorkers: 2
-      Timeout: 5
+      NumberOfWorkers: 5
+      Timeout: 10
       MaxRetries: 0
       ExecutionProperty:
         MaxConcurrentRuns: 2
@@ -56,21 +65,21 @@ Resources:
   GlueTester:
     Type: AWS::Glue::Job
     Properties:
-      Role: !Ref 'GlueRole'
-      Name: !Ref 'GlueTesterName'
+      Role: !Ref GlueRole
+      Name: !Ref GlueTesterName
       Description: "Glue DailyCheckIn Tester"
       GlueVersion: 4.0
       Command:
         Name: glueetl
         PythonVersion: 3
-        ScriptLocation: 's3://tm-staging-zone/glue-script/tm-tester.py'
+        ScriptLocation: !Ref GlueTesterScript
       DefaultArguments:
         "--enable-glue-datacatalog": ""
         "--enable-metrics": ""
         "--job-bookmark-option": "job-bookmark-disable"
       WorkerType: Standard
-      NumberOfWorkers: 2
-      Timeout: 5
+      NumberOfWorkers: 5
+      Timeout: 10
       MaxRetries: 0
       ExecutionProperty:
         MaxConcurrentRuns: 2
@@ -78,21 +87,21 @@ Resources:
   GlueLoader:
     Type: AWS::Glue::Job
     Properties:
-      Role: !Ref 'GlueRole'
-      Name: !Ref 'GlueLoaderrName'
+      Role: !Ref GlueRole
+      Name: !Ref GlueLoaderrName
       Description: "Glue DailyCheckIn Loader"
       GlueVersion: 4.0
       Command:
         Name: glueetl
         PythonVersion: 3
-        ScriptLocation: 's3://tm-staging-zone/glue-script/tm-loader.py'
+        ScriptLocation: !Ref GlueLoaderScript
       DefaultArguments:
         "--enable-glue-datacatalog": ""
         "--enable-metrics": ""
         "--job-bookmark-option": "job-bookmark-disable"
       WorkerType: Standard
-      NumberOfWorkers: 2
-      Timeout: 5
+      NumberOfWorkers: 5
+      Timeout: 10
       MaxRetries: 0
       ExecutionProperty:
         MaxConcurrentRuns: 2

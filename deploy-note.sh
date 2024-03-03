@@ -13,7 +13,7 @@ aws cloudformation deploy --template-file app/app.yml --stack-name tm-etl-app --
 ### deploy lambda ###
 # cd to /src/${project}
 zip controller_package.zip controller.py
-aws s3api put-object --bucket  tm-staging-zone --key lamda/controller_package.zip --body controller_package.zip
+aws s3api put-object --bucket  tm-staging-zone --key lambda/controller_package.zip --body controller_package.zip
 
 zip api_package.zip api_caller.py
 aws s3api put-object --bucket  tm-staging-zone --key lambda/app_package.zip --body api_package.zip
@@ -23,6 +23,6 @@ aws s3api put-object --bucket  tm-raw-zone --key table=dailycheckins/year=2024/m
 
 ### upload glue script
 # cd to /notebook/glue-script
-aws s3api put-object --bucket  tm-staging-zone --key glue-script/tm-loader.py --body tm-loader.py
-aws s3api put-object --bucket  tm-staging-zone --key glue-script/tm-tester.py --body tm-tester.py
 aws s3api put-object --bucket  tm-staging-zone --key glue-script/tm-transformer.py --body tm-transformer.py
+aws s3api put-object --bucket  tm-staging-zone --key glue-script/tm-tester.py --body tm-tester.py
+aws s3api put-object --bucket  tm-staging-zone --key glue-script/tm-loader.py --body tm-loader.py

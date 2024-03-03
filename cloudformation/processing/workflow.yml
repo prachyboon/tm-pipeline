@@ -17,7 +17,7 @@ Resources:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: TransformStateExecutionRoleGeneralPolicy
+        - PolicyName: generalPolicy
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -36,7 +36,7 @@ Resources:
   TMWorkflow:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: !Ref 'TMWorkflowName'
+      StateMachineName: !Ref TMWorkflowName
       DefinitionString: |-
         {
           "StartAt": "TransformerJob",

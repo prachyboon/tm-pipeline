@@ -10,16 +10,20 @@ Parameters:
   PipelineLogsTableName:
     Type: String
     Default: "tm-pipeline-log"
+  LambdaDestinationTriggerArn:
+    Type: String
+    Default: "arn:aws:lambda:ap-southeast-1:342076896000:function:tm-dailycheckin-controller"
+
 
 Resources:
   LandingZoneBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref LandingZoneBucketName
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: s3:ObjectCreated:*
-            Function: "arn:aws:lambda:ap-southeast-1:342076896000:function:tm-dailycheckin-controller"
+            Function: !Ref LambdaDestinationTriggerArn
             Filter:
               S3Key:
                 Rules:
@@ -27,14 +31,14 @@ Resources:
                     Value: .csv
 
   StagingZoneBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref StagingZoneBucketName
 
   PipelineLogsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref 'PipelineLogsTableName'
+      TableName: !Ref PipelineLogsTableName
       AttributeDefinitions:
         - AttributeName: ingestedID
           AttributeType: S

@@ -5,13 +5,21 @@ Parameters:
   AppName:
     Type: String
     Default: "tm-dailycheckin-app"
+  ApiGWName:
+    Type: String
+    Default: "tm-app-api-gw"
+  ApiCodeUri:
+    Type: String
+    Default: "s3://tm-staging-zone/lambda/app_package.zip"
+  ApiLayerArn:
+    Type: String
+    Default: "arn:aws:lambda:ap-southeast-1:342076896000:layer:my-layer:1"
 
 Resources:
-
   AppApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: !Sub "app-api-gw"
+      Name: !Ref ApiGWName
       StageName: Prod
 
   AppRole:
@@ -52,17 +60,17 @@ Resources:
   AppFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: 's3://tm-staging-zone/lambda/app_package.zip'
+      CodeUri: "s3://tm-staging-zone/lambda/app_package.zip"
       Handler: api_caller.lambda_handler
       Role: !GetAtt AppRole.Arn
-      FunctionName: !Ref 'AppName'
+      FunctionName: !Ref AppName
       Runtime: python3.10
       Architectures:
         - arm64
       MemorySize: 128
       Timeout: 30
       Layers:
-        - arn:aws:lambda:ap-southeast-1:342076896000:layer:my-layer:1
+        - !Ref ApiLayerArn
       Events:
         AppCallerApi:
           Type: Api

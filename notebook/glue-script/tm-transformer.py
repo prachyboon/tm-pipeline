@@ -7,7 +7,7 @@ import sys
 import pytz
 from datetime import datetime
 
-from pyspark.sql.types import StringType, TimestampType, FloatType
+from pyspark.sql.types import StringType, TimestampType, DecimalType
 from pyspark.sql.functions import (col, monotonically_increasing_id, regexp_replace,
                                    to_utc_timestamp, from_unixtime, unix_timestamp)
 
@@ -28,8 +28,8 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-# spark.conf.set("spark.sql.legacy.timeParserPolicy", "LEGACY")
-# spark.conf.set("spark.sql.parquet.datetimeRebaseModeInWrite", "CORRECTED")
+spark.conf.set("spark.sql.legacy.timeParserPolicy", "LEGACY")
+spark.conf.set("spark.sql.parquet.datetimeRebaseModeInWrite", "CORRECTED")
 
 TABLE = 'dailycheckins'
 
@@ -61,11 +61,11 @@ df = df.withColumn("id", monotonically_increasing_id())
 
 # casting to be right
 df2 = df.withColumn('user', col('user').cast(StringType()))
-df2 = df2.withColumn('hours', round(col('hours').cast(FloatType()), 2))
+df2 = df2.withColumn('hours', col('hours').cast(DecimalType(5, 2)))
 df2 = df2.withColumn('project', col('project').cast(StringType()))
 df2 = df2.withColumn('timestamp', col('timestamp').cast(TimestampType()))
 
-# transform 'timestamp' column 
+# transform 'timestamp' column
 nullIds = df2.filter(col('timestamp').eqNullSafe(None) | col('timestamp').isNull()).select('id').rdd.flatMap(
     lambda x: x).collect()
 clean_df = df2.filter(~col("id").isin(nullIds))
@@ -89,9 +89,12 @@ df4 = df4.withColumn('timestamp', to_utc_timestamp(from_unixtime(unix_timestamp(
 clean_df3 = df4.select('*')
 final_df = clean_df.unionByName(clean_df2).unionByName(clean_df3)
 
+final_df = final_df.withColumn('timestamp', col('timestamp').cast(StringType()))
+
 final_df.write \
+    .format("csv") \
     .option("header", "true") \
-    .mode('overwrite') \
-    .csv("s3://tm-staging-zone/table={}/year={}/month={}/day={}/".format(TABLE, year, month, day))
+    .mode("overwrite") \
+    .save("s3://tm-staging-zone/table={}/year={}/month={}/day={}/".format(TABLE, year, month, day))
 
 job.commit()
