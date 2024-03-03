@@ -46,8 +46,9 @@ def lambda_handler(event, context):
     cur = conn.cursor()
 
     try:
-        cur.execute(""" select username as user, project,  cast(hours as varchar), to_char(timestamp, 'YYYY-mm-dd HH:SS')
-                            from daily_checkins where username = '{}' ;""".format(username))
+        cur.execute(""" select username as user, project,  cast(hours as varchar), 
+                        to_char(timestamp, 'YYYY-mm-dd HH:SS') as timestamp
+                        from daily_checkins where username = '{}' ;""".format(username))
         column_names = [desc[0] for desc in cur.description]
         result = cur.fetchall()
         conn.commit()
