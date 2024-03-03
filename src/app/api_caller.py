@@ -46,8 +46,8 @@ def lambda_handler(event, context):
     cur = conn.cursor()
 
     try:
-        cur.execute(""" select username as user, project, hours, to_char(timestamp, 'YYYY-mm-dd HH:SS')
-                        from daily_checkins where username = '{}' ;""".format(username))
+        cur.execute(""" select username as user, project,  cast(hours as varchar), to_char(timestamp, 'YYYY-mm-dd HH:SS')
+                            from daily_checkins where username = '{}' ;""".format(username))
         column_names = [desc[0] for desc in cur.description]
         result = cur.fetchall()
         conn.commit()
@@ -56,7 +56,6 @@ def lambda_handler(event, context):
         conn.close()
 
     response = assemble_response(column_names, result)
-
     return {
         'statusCode': 200,
         'body': json.dumps({
@@ -70,4 +69,3 @@ def assemble_response(cols, rows):
     for row in rows:
         tmp.append(dict(zip(cols, row)))
     return tmp
-
