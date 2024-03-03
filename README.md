@@ -100,3 +100,10 @@ Item in logging table (dynamodb)
 }
 ```
 
+Alert from SNS
+![tm-pipeline-noti.png](image%2Ftm-pipeline-noti.png)
+
+Raw data from loading in Postgres (destination)
+![data-in-postgres.png](image%2Fdata-in-postgres.png)
+
+---
